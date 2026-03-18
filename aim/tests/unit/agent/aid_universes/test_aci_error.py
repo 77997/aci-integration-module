@@ -85,7 +85,7 @@ class TestACIError(base.BaseTestCase):
                         err_text='', err_code=str(err_code))))
 
         self.assertEqual(
-            errors.SYSTEM_TRANSIENT,
+            errors.OPERATION_CRITICAL,
             self.apic_handler.analyze_exception(
                 exceptions.ApicResponseNotOk(
                     request='', status='403', reason='',
@@ -104,6 +104,21 @@ class TestACIError(base.BaseTestCase):
                 exceptions.ApicResponseNotOk(
                     request='', status='300', reason='',
                     err_text='', err_code='')))
+
+    def test_analyze_exception_permission_denied(self):
+        # APIC returns "user <name> does not have domain access to config Mo"
+        # as HTTP 400 with code 170, not 403, so the 403 branch never sees it.
+        # Transient, not critical, on purpose: OPERATION_CRITICAL would take
+        # the object out of the hash-tree diff and leave it parked until the
+        # hourly error-state recovery, turning a momentary refusal into a long
+        # stall. The visibility comes from the ERROR log, not from the class.
+        for err_code in self.base_handler.APIC_PERMISSION_TRANSIENT:
+            self.assertEqual(
+                errors.OPERATION_TRANSIENT,
+                self.apic_handler.analyze_exception(
+                    exceptions.ApicResponseNotOk(
+                        request='', status='400', reason='',
+                        err_text='', err_code=str(err_code))))
 
     def test_analyze_exception_request(self):
         self.assertEqual(

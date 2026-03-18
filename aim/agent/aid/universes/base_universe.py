@@ -583,8 +583,24 @@ class HashTreeStoredUniverse(AimUniverse):
 
     def _fail_aim_synchronization(self, context, aim_object, operation, reason,
                                   error):
-        return self.error_handlers.get(error, self._noop)(
-            context, aim_object, operation, reason)
+        handler = self.error_handlers.get(error)
+        if handler is None:
+            if error == errors.UNKNOWN:
+                # Only OPERATION_CRITICAL and SYSTEM_CRITICAL have handlers;
+                # every other class does nothing and records nothing. For the
+                # transient classes that is the design - they are meant to be
+                # retried quietly. For UNKNOWN it means an error nobody has
+                # classified passes through in complete silence, which is how
+                # an APIC RBAC refusal (code 170) stayed invisible for hours:
+                # the object was re-pushed forever and no status, health score
+                # or fault ever showed a problem. Retry behaviour is
+                # unchanged; it just stops being silent.
+                LOG.error("Unclassified error during %s of %s. The object is "
+                          "still being retried but no status was recorded "
+                          "against it. Reason: %s",
+                          operation, aim_object, reason)
+            return self._noop(context, aim_object, operation, reason)
+        return handler(context, aim_object, operation, reason)
 
     def _surrender_operation(self, context, aim_object, operation, reason):
         self.manager.set_resource_sync_error(context, aim_object,

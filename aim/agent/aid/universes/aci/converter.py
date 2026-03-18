@@ -301,6 +301,31 @@ def qos_rs_egress_dpp_pol(object_dict, otype, helper,
     return result
 
 
+# APIC stores qosEpDscpMarking.mark as a symbolic name, while Neutron and AIM
+# carry the numeric DSCP value: a policy with dscp_mark=26 is written as 26,
+# accepted, and read back as 'AF31'. Without normalising the read, desired and
+# observed never match, AID emits a create for the object on every cycle and the
+# QosRequirement holding it stays sync_pending forever.
+#
+# Taken from this APIC's own class metadata, /doc/jsonmeta/qos/EpDscpMarking.json
+# -> properties.mark.validValues (localName -> value). It covers every value in
+# neutron_lib's VALID_DSCP_MARKS.
+DSCP_NAME_TO_VALUE = {
+    'CS0': '0', 'CS1': '8', 'AF11': '10', 'AF12': '12', 'AF13': '14',
+    'CS2': '16', 'AF21': '18', 'AF22': '20', 'AF23': '22', 'CS3': '24',
+    'AF31': '26', 'AF32': '28', 'AF33': '30', 'CS4': '32', 'AF41': '34',
+    'AF42': '36', 'AF43': '38', 'CS5': '40', 'VA': '44', 'EF': '46',
+    'CS6': '48', 'CS7': '56',
+}
+
+
+def normalize_dscp_mark(mark):
+    """Return APIC's symbolic DSCP mark as the numeric value AIM stores."""
+    if mark is None:
+        return None
+    return DSCP_NAME_TO_VALUE.get(str(mark).strip().upper(), mark)
+
+
 def qos_ep_dscp_marking(object_dict, otype, helper,
                         source_identity_attributes,
                         destination_identity_attributes, to_aim=True):
@@ -314,11 +339,16 @@ def qos_ep_dscp_marking(object_dict, otype, helper,
             return []
         for index, attr in enumerate(destination_identity_attributes):
             res_dict[attr] = id[index]
-        res_dict['dscp'] = object_dict.get('mark', None)
+        res_dict['dscp'] = normalize_dscp_mark(object_dict.get('mark'))
         result.append(default_to_resource(res_dict, helper, to_aim=True))
     else:
+        # NOTE: dscp is compared against None, not tested for truth. DSCP 0
+        # is CS0/best-effort and a legal Neutron dscp_mark, so "re-mark this
+        # traffic down to best-effort" is a policy a user can express. Under a
+        # truthiness test that value is falsy, no qosEpDscpMarking is emitted,
+        # and the rule silently does nothing while the API reports success.
         if object_dict.get('tenant_name') and object_dict.get('name') and \
-           object_dict.get('dscp'):
+           object_dict.get('dscp') is not None:
             attrs = [object_dict.get('tenant_name'),
                      object_dict.get('name')]
             try:
@@ -1019,6 +1049,29 @@ resource_map = {
             }
         },
         'to_resource': default_to_resource_strict,
+    }],
+    'fvCrtrn': [{
+        'resource': resource.EndpointGroupCriteria,
+        'exceptions': {
+            'match': {
+                'other': 'match',
+            },
+        },
+    }],
+    'fvIpAttr': [{
+        'resource': resource.EndpointGroupIpAttr,
+        'exceptions': {
+            'usefvSubnet': {
+                'other': 'use_subnet',
+                'converter': boolean,
+            },
+        },
+    }],
+    'fvMacAttr': [{
+        'resource': resource.EndpointGroupMacAttr,
+    }],
+    'fvVmAttr': [{
+        'resource': resource.EndpointGroupVmAttr,
     }],
     'faultInst': [{
         'resource': aim_status.AciFault,

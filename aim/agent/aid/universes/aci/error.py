@@ -36,6 +36,31 @@ class APICErrorHandler(object):
     APIC_OBJECT_CRITICAL = set([122, 121, 120, 106, 801, 104])
     APIC_OBJECT_TRANSIENT = set([100, 102])
     APIC_SYSTEM_TRANSIENT = set([1])
+    # APIC RBAC refusals. 170 is "user <name> does not have domain access to
+    # config Mo, class <class>", returned as HTTP 400, so the 403 branch below
+    # never sees it and it used to land on the UNKNOWN fallback - logged once
+    # per request at WARNING and otherwise invisible. Observed on a live
+    # fabric: an APIC upgrade reset the AIM account's effective grant and
+    # every write was refused for hours with nothing but that warning.
+    #
+    # Deliberately TRANSIENT rather than CRITICAL. 170 is an account-level
+    # condition, so it lands on whatever is in the diff - including the shared
+    # objects AIM owns in tenant common. OPERATION_CRITICAL would call
+    # set_resource_sync_error, which cascades SYNC_FAILED across the whole
+    # subtree (aim_manager._set_resource_sync_error), sets _error on the tree
+    # node (tree_manager), and _diff_children then skips that node - so the
+    # object stops being retried and is only re-armed by _recover_root_errors
+    # on error_state_recovery_interval, 3600s by default. A momentary refusal
+    # during an APIC upgrade would therefore turn a ten-second self-heal into
+    # up to an hour of stalled sync, with every Neutron network reporting
+    # apic:synchronization_state=error because the shared VRF in common is in
+    # its status aggregate.
+    #
+    # Transient keeps the object in the diff, so it converges on the next
+    # cycle the moment the grant is restored, and a genuinely persistent
+    # refusal still escalates through the existing divergence backstop. The
+    # visibility gap is closed by logging at ERROR with the actual remedy.
+    APIC_PERMISSION_TRANSIENT = set([170])
 
     def analyze_request_exception(self, e):
         if isinstance(e, request_exc.Timeout):
@@ -62,12 +87,27 @@ class APICErrorHandler(object):
                 return errors.OPERATION_TRANSIENT
             if error_code in self.APIC_SYSTEM_TRANSIENT:
                 return errors.SYSTEM_TRANSIENT
+            if error_code in self.APIC_PERMISSION_TRANSIENT:
+                LOG.error("APIC refused the operation for lack of privilege "
+                          "(error %s). Check that the APIC account still has "
+                          "domain access to this object's tenant: compare the "
+                          "rolesW actually returned by aaaLogin against the "
+                          "roles configured on the user, they can differ. "
+                          "Retrying.", error_code)
+                return errors.OPERATION_TRANSIENT
             else:
                 LOG.warning("Unmanaged error code %s from APIC", error_code)
                 return errors.UNKNOWN
         elif error_status == 403:
-            LOG.warning("Forbidden operation, re-login required.")
-            return errors.SYSTEM_TRANSIENT
+            # apicapi retries once after a fresh login (403 is in its
+            # REFRESH_CODES), so a 403 reaching us is a genuine authorization
+            # failure rather than an expired token. Report it as critical:
+            # SYSTEM_TRANSIENT has no handler in base_universe and falls
+            # through to _noop, leaving the object in sync_pending with no
+            # error recorded against it.
+            LOG.error("Forbidden operation on APIC, check that the APIC "
+                      "account has privileges for this object.")
+            return errors.OPERATION_CRITICAL
         elif error_status >= 500:
             LOG.warning("Server error, APIC might recover by itself.")
             return errors.SYSTEM_TRANSIENT

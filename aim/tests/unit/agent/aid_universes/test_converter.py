@@ -1313,6 +1313,7 @@ class TestAciToAimConverterExternalSubnet(TestAciToAimConverterBase,
 
 def get_example_aci_security_group_rule(**kwargs):
     attr = {'name': 'rule1',
+            'action': 'permit',
             'dn': 'uni/tn-t1/pol-sg1/subj-sgs1/rule-rule1'}
     attr.update(**kwargs)
     return _aci_obj('hostprotRule', **attr)
@@ -2419,6 +2420,7 @@ class TestAciToAimConverterSpanSpanlbl(TestAciToAimConverterBase,
 
 def get_example_aci_system_security_group_rule(**kwargs):
     attr = {'name': 'rule1',
+            'action': 'permit',
             'dn': 'uni/tn-common/pol-openstack_aid_SystemSecurityGroup/'
                   'subj-sgs1/rule-rule1'}
     attr.update(**kwargs)
@@ -3576,12 +3578,14 @@ class TestAimToAciConverterSecurityGroupRule(TestAimToAciConverterBase,
                   dn='uni/tn-t1/pol-sg1/subj-sgs1/rule-rule1',
                   direction='ingress', protocol='unspecified',
                   fromPort='unspecified', toPort='unspecified',
+                  action='permit',
                   ethertype='undefined', nameAlias='', connTrack='reflexive',
                   icmpCode='unspecified', icmpType='unspecified')],
         [_aci_obj('hostprotRule',
                   dn='uni/tn-t1/pol-sg2/subj-sgs1/rule-rule1',
                   protocol='l2tp', direction='egress',
                   fromPort='http', toPort='https',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='normal',
                   icmpCode='no-code', icmpType='3'),
          _aci_obj('hostprotRsRemoteIpContainer',
@@ -3592,6 +3596,7 @@ class TestAimToAciConverterSecurityGroupRule(TestAimToAciConverterBase,
                   dn='uni/tn-t1/pol-sg3/subj-sgs1/rule-rule1',
                   protocol='icmp', direction='egress',
                   fromPort='http', toPort='https',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='normal',
                   icmpCode='unspecified', icmpType='255'),
          _aci_obj(
@@ -3606,6 +3611,7 @@ class TestAimToAciConverterSecurityGroupRule(TestAimToAciConverterBase,
                   dn='uni/tn-t1/pol-sg4/subj-sgs1/rule-rule1',
                   protocol='tcp', direction='egress',
                   fromPort='http', toPort='https',
+                  action='permit',
                   ethertype='ipv6', nameAlias='', connTrack='normal',
                   icmpCode='unspecified', icmpType='unspecified'),
          _aci_obj('hostprotRsRemoteIpContainer',
@@ -3616,12 +3622,14 @@ class TestAimToAciConverterSecurityGroupRule(TestAimToAciConverterBase,
                   dn='uni/tn-t1/pol-sg5/subj-sgs1/rule-rule1',
                   protocol='tcp', direction='ingress',
                   fromPort='rtsp', toPort='rtsp',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='reflexive',
                   icmpCode='unspecified', icmpType='unspecified')],
         [_aci_obj('hostprotRule',
                   dn='uni/tn-t1/pol-sg6/subj-sgs1/rule-rule1',
                   protocol='50', direction='egress',
                   fromPort='unspecified', toPort='unspecified',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='normal',
                   icmpCode='unspecified', icmpType='unspecified'),
          _aci_obj(
@@ -4975,7 +4983,7 @@ class TestAimToAciConverterQosReq(TestAimToAciConverterBase,
         [_aci_obj('qosRequirement', nameAlias='',
                   dn="uni/tn-t2/qosreq-q1"),
          _aci_obj('qosEpDscpMarking', mark=24,
-                  dn="uni/tn-t2/qosreq-q1/dscpmarking")],
+                  dn="uni/tn-t2/qosreq-q1/dscp_marking")],
         [_aci_obj('qosRequirement', nameAlias='',
                   dn="uni/tn-t3/qosreq-q1"),
          _aci_obj('qosRsIngressDppPol',
@@ -4985,7 +4993,7 @@ class TestAimToAciConverterQosReq(TestAimToAciConverterBase,
                   dn="uni/tn-t3/qosreq-q1/rsegressDppPol",
                   tnQosDppPolName="e1"),
          _aci_obj('qosEpDscpMarking', mark=24,
-                  dn="uni/tn-t3/qosreq-q1/dscpmarking")],
+                  dn="uni/tn-t3/qosreq-q1/dscp_marking")],
     ]
 
 
@@ -5108,6 +5116,7 @@ class TestAimToAciConverterSystemSecurityGroupRule(TestAimToAciConverterBase,
                      'subj-sgs1/rule-rule1',
                   direction='ingress', protocol='unspecified',
                   fromPort='unspecified', toPort='unspecified',
+                  action='permit',
                   ethertype='undefined', nameAlias='', connTrack='reflexive',
                   icmpCode='unspecified', icmpType='unspecified')],
         [_aci_obj('hostprotRule',
@@ -5115,6 +5124,7 @@ class TestAimToAciConverterSystemSecurityGroupRule(TestAimToAciConverterBase,
                      'subj-sgs2/rule-rule1',
                   protocol='l2tp', direction='egress',
                   fromPort='http', toPort='https',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='normal',
                   icmpCode='no-code', icmpType='3')],
         [_aci_obj('hostprotRule',
@@ -5122,6 +5132,7 @@ class TestAimToAciConverterSystemSecurityGroupRule(TestAimToAciConverterBase,
                      'subj-sgs3/rule-rule1',
                   protocol='icmp', direction='egress',
                   fromPort='http', toPort='https',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='normal',
                   icmpCode='unspecified', icmpType='255'),
          _aci_obj(
@@ -5139,6 +5150,7 @@ class TestAimToAciConverterSystemSecurityGroupRule(TestAimToAciConverterBase,
                      'subj-sgs4/rule-rule1',
                   protocol='tcp', direction='egress',
                   fromPort='http', toPort='https',
+                  action='permit',
                   ethertype='ipv6', nameAlias='', connTrack='normal',
                   icmpCode='unspecified', icmpType='unspecified')],
         [_aci_obj('hostprotRule',
@@ -5146,6 +5158,7 @@ class TestAimToAciConverterSystemSecurityGroupRule(TestAimToAciConverterBase,
                      'subj-sgs5/rule-rule1',
                   protocol='50', direction='egress',
                   fromPort='unspecified', toPort='unspecified',
+                  action='permit',
                   ethertype='ipv4', nameAlias='', connTrack='normal',
                   icmpCode='unspecified', icmpType='unspecified'),
          _aci_obj(
@@ -5187,7 +5200,7 @@ class TestAciToAimConverterQosReq(TestAciToAimConverterBase,
          _aci_obj(
             'qosEpDscpMarking',
             mark=24,
-            dn='uni/tn-t2/qosreq-r1/dscpmarking'),
+            dn='uni/tn-t2/qosreq-r1/dscp_marking'),
          _aci_obj(
             'qosRsIngressDppPol',
             tnQosDppPolName='d1',
@@ -5440,3 +5453,46 @@ class TestAimToAciConverterSpanSpanlbl(TestAimToAciConverterBase,
                   dn=('uni/infra/vsrcgrp-testSrcGrp/spanlbl-testDestGrp1'),
                   nameAlias='', tag='yellow-green')]
     ]
+
+
+class TestDscpMarkNormalization(base.TestAimDBBase):
+    """APIC returns qosEpDscpMarking.mark symbolically, AIM stores it numerically.
+
+    A policy written as 26 is read back as 'AF31'. Without normalising the read,
+    desired and observed never match and the QosRequirement holding the marking
+    stays sync_pending forever while AID re-pushes it every cycle.
+    """
+
+    def test_symbolic_mark_becomes_numeric(self):
+        self.assertEqual('26', converter.normalize_dscp_mark('AF31'))
+        self.assertEqual('0', converter.normalize_dscp_mark('CS0'))
+        self.assertEqual('46', converter.normalize_dscp_mark('EF'))
+        self.assertEqual('44', converter.normalize_dscp_mark('VA'))
+
+    def test_numeric_mark_is_left_alone(self):
+        self.assertEqual(26, converter.normalize_dscp_mark(26))
+        self.assertEqual('26', converter.normalize_dscp_mark('26'))
+        self.assertEqual('0', converter.normalize_dscp_mark('0'))
+
+    def test_none_and_unknown_pass_through(self):
+        self.assertIsNone(converter.normalize_dscp_mark(None))
+        self.assertEqual('nonsense', converter.normalize_dscp_mark('nonsense'))
+
+    def test_covers_every_neutron_dscp_mark(self):
+        # neutron_lib's VALID_DSCP_MARKS - every one must survive the round
+        # trip, otherwise that mark is the next permanent sync_pending.
+        valid = [0, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34,
+                 36, 38, 40, 46, 48, 56]
+        values = set(converter.DSCP_NAME_TO_VALUE.values())
+        for mark in valid:
+            self.assertIn(str(mark), values)
+
+    def test_aci_symbolic_mark_converts_to_aim(self):
+        aci = [_aci_obj('qosRequirement', dn='uni/tn-t1/qosreq-q1',
+                        nameAlias=''),
+               _aci_obj('qosEpDscpMarking', mark='AF31',
+                        dn='uni/tn-t1/qosreq-q1/dscp_marking')]
+        result = converter.AciToAimModelConverter().convert(aci)
+        marked = [r for r in result if getattr(r, 'dscp', None)]
+        self.assertEqual(1, len(marked))
+        self.assertEqual('26', marked[0].dscp)
