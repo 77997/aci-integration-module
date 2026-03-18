@@ -315,7 +315,15 @@ class SqlAlchemyStore(AimStore):
                     api_res.SecurityGroupRemoteIpContainer:
                         models.SGRemoteIpContainer,
                     api_res.SecurityGroupRemoteIp:
-                        models.SGContainerRemoteIPs}
+                        models.SGContainerRemoteIPs,
+                    api_res.EndpointGroupCriteria:
+                        models.EndpointGroupCriteria,
+                    api_res.EndpointGroupIpAttr:
+                        models.EndpointGroupIpAttr,
+                    api_res.EndpointGroupMacAttr:
+                        models.EndpointGroupMacAttr,
+                    api_res.EndpointGroupVmAttr:
+                        models.EndpointGroupVmAttr}
 
     resource_map = {}
     for k, v in list(db_model_map.items()):

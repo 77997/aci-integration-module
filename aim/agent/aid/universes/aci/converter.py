@@ -1017,6 +1017,29 @@ resource_map = {
         },
         'to_resource': default_to_resource_strict,
     }],
+    'fvCrtrn': [{
+        'resource': resource.EndpointGroupCriteria,
+        'exceptions': {
+            'match': {
+                'other': 'match',
+            },
+        },
+    }],
+    'fvIpAttr': [{
+        'resource': resource.EndpointGroupIpAttr,
+        'exceptions': {
+            'usefvSubnet': {
+                'other': 'use_subnet',
+                'converter': boolean,
+            },
+        },
+    }],
+    'fvMacAttr': [{
+        'resource': resource.EndpointGroupMacAttr,
+    }],
+    'fvVmAttr': [{
+        'resource': resource.EndpointGroupVmAttr,
+    }],
     'faultInst': [{
         'resource': aim_status.AciFault,
         'exceptions': {

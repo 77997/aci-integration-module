@@ -1800,3 +1800,78 @@ class SystemSecurityGroupRule(model_base.Base, model_base.HasAimId,
         res_attr = super(SystemSecurityGroupRule, self).to_attr(session)
         res_attr['remote_ips'] = [x.cidr for x in res_attr['remote_ips']]
         return res_attr
+
+
+class EndpointGroupCriteria(model_base.Base, model_base.HasAimId,
+                            model_base.HasDisplayName,
+                            model_base.HasTenantName,
+                            model_base.AttributeMixin,
+                            model_base.IsMonitored):
+    """DB model for uSeg Microsegmentation Criteria (fvCrtrn)."""
+
+    __tablename__ = 'aim_endpoint_group_criteria'
+    __table_args__ = (
+        model_base.uniq_column(__tablename__, 'tenant_name',
+                               'app_profile_name', 'epg_name') +
+        model_base.to_tuple(model_base.Base.__table_args__))
+
+    app_profile_name = model_base.name_column(nullable=False)
+    epg_name = model_base.name_column(nullable=False)
+    match = sa.Column(sa.String(16))
+
+
+class EndpointGroupIpAttr(model_base.Base, model_base.HasAimId,
+                          model_base.HasName, model_base.HasDisplayName,
+                          model_base.HasTenantName,
+                          model_base.AttributeMixin,
+                          model_base.IsMonitored):
+    """DB model for uSeg IP Attribute (fvIpAttr)."""
+
+    __tablename__ = 'aim_endpoint_group_ip_attr'
+    __table_args__ = (
+        model_base.uniq_column(__tablename__, 'tenant_name',
+                               'app_profile_name', 'epg_name', 'name') +
+        model_base.to_tuple(model_base.Base.__table_args__))
+
+    app_profile_name = model_base.name_column(nullable=False)
+    epg_name = model_base.name_column(nullable=False)
+    ip = sa.Column(sa.String(64), nullable=False, default='')
+    use_subnet = sa.Column(sa.Boolean, nullable=False, default=False)
+
+
+class EndpointGroupMacAttr(model_base.Base, model_base.HasAimId,
+                           model_base.HasName, model_base.HasDisplayName,
+                           model_base.HasTenantName,
+                           model_base.AttributeMixin,
+                           model_base.IsMonitored):
+    """DB model for uSeg MAC Attribute (fvMacAttr)."""
+
+    __tablename__ = 'aim_endpoint_group_mac_attr'
+    __table_args__ = (
+        model_base.uniq_column(__tablename__, 'tenant_name',
+                               'app_profile_name', 'epg_name', 'name') +
+        model_base.to_tuple(model_base.Base.__table_args__))
+
+    app_profile_name = model_base.name_column(nullable=False)
+    epg_name = model_base.name_column(nullable=False)
+    mac = sa.Column(sa.String(24), nullable=False, default='')
+
+
+class EndpointGroupVmAttr(model_base.Base, model_base.HasAimId,
+                          model_base.HasName, model_base.HasDisplayName,
+                          model_base.HasTenantName,
+                          model_base.AttributeMixin,
+                          model_base.IsMonitored):
+    """DB model for uSeg VM Attribute (fvVmAttr)."""
+
+    __tablename__ = 'aim_endpoint_group_vm_attr'
+    __table_args__ = (
+        model_base.uniq_column(__tablename__, 'tenant_name',
+                               'app_profile_name', 'epg_name', 'name') +
+        model_base.to_tuple(model_base.Base.__table_args__))
+
+    app_profile_name = model_base.name_column(nullable=False)
+    epg_name = model_base.name_column(nullable=False)
+    type = sa.Column(sa.String(32), nullable=False, default='vm-name')
+    operator = sa.Column(sa.String(16), nullable=False, default='equals')
+    value = sa.Column(sa.String(512), nullable=False, default='')

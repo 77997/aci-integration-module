@@ -29,6 +29,13 @@ from aim import exceptions as exc
 # TODO(amitbose) Move ManagedObjectClass definitions to AIM
 from apicapi import apic_client
 
+apic_client.ManagedObjectClass.supported_mos.update({
+    'fvCrtrn': apic_client.ManagedObjectName('fvAEPg', 'crtrn'),
+    'fvIpAttr': apic_client.ManagedObjectName('fvCrtrn', 'ipattr-%s'),
+    'fvMacAttr': apic_client.ManagedObjectName('fvCrtrn', 'macattr-%s'),
+    'fvVmAttr': apic_client.ManagedObjectName('fvCrtrn', 'vmattr-%s'),
+})
+
 
 LOG = logging.getLogger(__name__)
 
@@ -1999,3 +2006,101 @@ class SecurityGroupRemoteIp(AciResourceBase):
     def __init__(self, **kwargs):
         super(SecurityGroupRemoteIp, self).__init__(
             {'monitored': False}, **kwargs)
+
+
+class EndpointGroupCriteria(AciResourceBase):
+    """Resource representing uSeg microsegmentation criteria (fvCrtrn).
+
+    Singleton child of EndpointGroup. Contains IP/MAC/VM attribute
+    match criteria for dynamic endpoint classification.
+    """
+    identity_attributes = t.identity(
+        ('tenant_name', t.name),
+        ('app_profile_name', t.name),
+        ('epg_name', t.name))
+    other_attributes = t.other(
+        ('display_name', t.name),
+        ('match', t.enum("all", "any", "at_least_one")),
+        ('monitored', t.bool))
+
+    _aci_mo_name = 'fvCrtrn'
+    _tree_parent = EndpointGroup
+
+    def __init__(self, **kwargs):
+        super(EndpointGroupCriteria, self).__init__(
+            {'match': 'any', 'monitored': False}, **kwargs)
+
+
+class EndpointGroupIpAttr(AciResourceBase):
+    """Resource representing a uSeg IP attribute (fvIpAttr).
+
+    Classifies endpoints into a uSeg EPG by IP address/subnet match.
+    """
+    identity_attributes = t.identity(
+        ('tenant_name', t.name),
+        ('app_profile_name', t.name),
+        ('epg_name', t.name),
+        ('name', t.name))
+    other_attributes = t.other(
+        ('display_name', t.name),
+        ('ip', t.string()),
+        ('use_subnet', t.bool),
+        ('monitored', t.bool))
+
+    _aci_mo_name = 'fvIpAttr'
+    _tree_parent = EndpointGroupCriteria
+
+    def __init__(self, **kwargs):
+        super(EndpointGroupIpAttr, self).__init__(
+            {'ip': '', 'use_subnet': False, 'monitored': False}, **kwargs)
+
+
+class EndpointGroupMacAttr(AciResourceBase):
+    """Resource representing a uSeg MAC attribute (fvMacAttr).
+
+    Classifies endpoints into a uSeg EPG by MAC address match.
+    """
+    identity_attributes = t.identity(
+        ('tenant_name', t.name),
+        ('app_profile_name', t.name),
+        ('epg_name', t.name),
+        ('name', t.name))
+    other_attributes = t.other(
+        ('display_name', t.name),
+        ('mac', t.string()),
+        ('monitored', t.bool))
+
+    _aci_mo_name = 'fvMacAttr'
+    _tree_parent = EndpointGroupCriteria
+
+    def __init__(self, **kwargs):
+        super(EndpointGroupMacAttr, self).__init__(
+            {'mac': '', 'monitored': False}, **kwargs)
+
+
+class EndpointGroupVmAttr(AciResourceBase):
+    """Resource representing a uSeg VM attribute (fvVmAttr).
+
+    Classifies endpoints by VM-level attribute matching.
+    """
+    identity_attributes = t.identity(
+        ('tenant_name', t.name),
+        ('app_profile_name', t.name),
+        ('epg_name', t.name),
+        ('name', t.name))
+    other_attributes = t.other(
+        ('display_name', t.name),
+        ('type', t.enum("vm-name", "hv", "rootContName",
+                         "domain", "mac", "ip", "vnic")),
+        ('operator', t.enum("equals", "contains",
+                             "startsWith", "endsWith")),
+        ('value', t.string()),
+        ('monitored', t.bool))
+
+    _aci_mo_name = 'fvVmAttr'
+    _tree_parent = EndpointGroupCriteria
+
+    def __init__(self, **kwargs):
+        super(EndpointGroupVmAttr, self).__init__(
+            {'type': 'vm-name', 'operator': 'equals', 'value': '',
+             'monitored': False}, **kwargs)
