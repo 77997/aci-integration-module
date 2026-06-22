@@ -14,40 +14,44 @@
 #    under the License.
 
 from oslo_config import cfg
-from oslo_db.sqlalchemy import session
+from oslo_db.sqlalchemy import enginefacade
 
 from aim import aim_store
 
 
-_FACADE = None
+_CTX_MANAGER = None
 
 
-def _create_facade_lazily():
-    global _FACADE
+def _get_context_manager():
+    global _CTX_MANAGER
 
-    if _FACADE is None:
-        _FACADE = session.EngineFacade.from_config(cfg.CONF, sqlite_fk=True)
+    if _CTX_MANAGER is None:
+        # oslo.db 18.0.0 removed the legacy EngineFacade (and its
+        # session.EngineFacade alias). Use the modern enginefacade context
+        # manager instead; configure() reads the connection from the
+        # [database] section of cfg.CONF, matching the old from_config().
+        _CTX_MANAGER = enginefacade.transaction_context()
+        _CTX_MANAGER.configure(sqlite_fk=True)
 
-    return _FACADE
+    return _CTX_MANAGER
 
 
 def get_engine():
     """Helper method to grab engine."""
-    facade = _create_facade_lazily()
-    return facade.get_engine()
+    return _get_context_manager().writer.get_engine()
 
 
 def dispose():
-    # Don't need to do anything if an enginefacade hasn't been created
-    if _FACADE is not None:
+    # Don't need to do anything if a context manager hasn't been created
+    if _CTX_MANAGER is not None:
         get_engine().pool.dispose()
 
 
 def get_session(expire_on_commit=True, use_slave=False):
     """Helper method to grab session."""
-    facade = _create_facade_lazily()
-    return facade.get_session(expire_on_commit=expire_on_commit,
-                              use_slave=use_slave)
+    ctx = _get_context_manager()
+    maker = (ctx.reader if use_slave else ctx.writer).get_sessionmaker()
+    return maker(expire_on_commit=expire_on_commit)
 
 
 def get_store(expire_on_commit=True, use_slave=False):
